@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "server": {
+    "decryption": "mlkem768x25519plus.native.600s.<PRIVATE>",
+    "encryption": "mlkem768x25519plus.native.0rtt.<PUBLIC>",
+    "domain": "cdn.example.net",
+    "edge_addr": "cdn.example.net",
+    "port": 443,
+    "path": "/static/js/chunk-vendors.example.js",
+    "padding_key": "k5e9394",
+    "padding_placement": "cookie"
+  },
+  "subscription": {
+    "domain": "config.example.net",
+    "push": ["sub@203.0.113.10:/var/www/sub/s/"],
+    "endpoints": [
+      {"label": "yandex",   "host": "cdn.example.net", "mode": "resolve"},
+      {"label": "yandex-d", "host": "cdn.example.net", "mode": "domain"}
+    ],
+    "max_ips": 2,
+    "dns_resolvers": ["8.8.8.8", "1.1.1.1"],
+    "ecs_subnets": [],
+    "uplink_get": true,
+    "xmux": false,
+    "sess_key": ""
+  },
+  "clients": {}
+}

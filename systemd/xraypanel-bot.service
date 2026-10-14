@@ -1,0 +1,42 @@
+[Unit]
+Description=XrayPanel Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/xraypanel
+EnvironmentFile=/opt/xraypanel/.env
+Environment="PYTHONUNBUFFERED=1"
+ExecStart=/opt/xraypanel/venv/bin/python -m bot.bot
+
+Restart=always
+RestartSec=5
+User=root
+Group=root
+
+# Bot runs as root: it restarts xray.service, rewrites the Xray config and
+# writes the subscription files.
+#
+# The sandbox below keeps /usr and /etc read-only, so every place the bot must
+# WRITE outside /opt/xraypanel is listed in ReadWritePaths ("-" = ignore if the
+# directory does not exist yet):
+#   /usr/local/etc/xray   Xray config.json and its .bak copy
+#   /var/www/sub          subscription files when the subscription host is this server
+# If your Xray config or subscription folder lives elsewhere, add the paths with
+#   systemctl edit xraypanel-bot.service      ([Service] ReadWritePaths=...)
+# ProtectHome=read-only lets rsync read the push key (/root/.ssh) but not write to /root.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=-/usr/local/etc/xray -/var/www/sub -/opt/xraypanel
+
+StandardOutput=journal
+StandardError=journal
+
+TimeoutStartSec=60
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+venv/
+.env
+data/
+sub-out/
+# exports and backups carry the server's private key and everyone's tokens
+*.zip
+*.tar.gz
+*.before_restore
+xray.json
+xray.json.pre-adopt-*

@@ -1,0 +1,9 @@
+[Unit]
+Description=XrayPanel Cleanup
+
+[Service]
+Type=oneshot
+EnvironmentFile=/opt/xraypanel/.env
+ExecStart=/opt/xraypanel/venv/bin/python -u /opt/xraypanel/services/cleanup.py
+StandardOutput=journal
+StandardError=journal

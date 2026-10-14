@@ -1,0 +1,9 @@
+[Unit]
+Description=XrayPanel Post-Disable Reminders (+1/+3 days)
+
+[Service]
+Type=oneshot
+EnvironmentFile=/opt/xraypanel/.env
+ExecStart=/opt/xraypanel/venv/bin/python -u /opt/xraypanel/services/post_disable_reminders.py
+StandardOutput=journal
+StandardError=journal

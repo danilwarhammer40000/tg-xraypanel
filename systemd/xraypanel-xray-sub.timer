@@ -1,0 +1,10 @@
+[Unit]
+Description=Republish Xray subscriptions every 15 minutes (CDN node IPs change on their own)
+
+[Timer]
+OnCalendar=*:0/15
+Persistent=true
+Unit=xraypanel-xray-sub.service
+
+[Install]
+WantedBy=timers.target

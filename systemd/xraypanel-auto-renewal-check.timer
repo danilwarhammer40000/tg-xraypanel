@@ -1,0 +1,10 @@
+[Unit]
+Description=Run XrayPanel AI auto-renewal overdue check every 15 minutes
+
+[Timer]
+OnCalendar=*-*-* *:0/15:00
+Persistent=true
+Unit=xraypanel-auto-renewal-check.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,9 @@
+[Unit]
+Description=XrayPanel AI Auto-Renewal Overdue Check (>3h unprocessed)
+
+[Service]
+Type=oneshot
+EnvironmentFile=/opt/xraypanel/.env
+ExecStart=/opt/xraypanel/venv/bin/python -u /opt/xraypanel/services/auto_renewal_overdue_check.py
+StandardOutput=journal
+StandardError=journal

@@ -1,0 +1,49 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><meta name="referrer" content="no-referrer">
+<title>Подключение</title>
+<style>
+body{font-family:sans-serif;max-width:480px;margin:32px auto;padding:0 16px}
+section{border:1px solid #8884;border-radius:12px;padding:4px 16px 12px;margin:16px 0}
+a.b,button{display:block;box-sizing:border-box;width:100%;padding:14px;margin:10px 0;background:#2563eb;color:#fff;text-align:center;border:0;border-radius:10px;text-decoration:none;font-size:16px}
+a.s{background:#475569}small{opacity:.7}
+</style></head><body>
+<h2>Подключение</h2><p id="msg"></p>
+<div id="apps" hidden>
+<p>Установите приложение и нажмите «Добавить подписку». Маршрутизация (российские сайты напрямую) подтянется сама вместе с подпиской. Если ничего не открылось, откройте страницу в обычном браузере, не внутри мессенджера.</p>
+<section id="incy"><h3>Incy</h3></section>
+<section id="happ"><h3>Happ</h3></section>
+<section id="v2"><h3>v2RayTun</h3><small>Маршрутизацию в v2RayTun задайте вручную в настройках приложения.</small></section>
+<details><summary>Другой режим маршрутизации (необязательно)</summary>
+<p><small>По умолчанию профиль уже применён. Эти кнопки нужны только чтобы выбрать другой режим.</small></p>
+<h4>Incy</h4><div id="alt-incy"></div><h4>Happ</h4><div id="alt-happ"></div></details>
+<button id="copy">Скопировать ссылку подписки</button>
+</div>
+<script>
+var $=function(i){return document.getElementById(i)};
+var token=location.hash.slice(1), base=location.origin;
+var MODES=[['ru','Маршрутизация: РФ напрямую'],['wl','Маршрутизация: белый список напрямую']];
+function btn(p,text,href,cls){var a=document.createElement('a');a.className='b '+(cls||'');a.textContent=text;if(href)a.href=href;p.insertBefore(a,p.querySelector('small'));return a}
+if(!/^[0-9a-f]{32}$/.test(token)){
+  $('msg').textContent='Ссылка неполная: в конце должен быть #токен. Запросите ссылку у администратора.';
+}else{
+  var sub=base+'/s/'+token; $('apps').hidden=false;
+  btn($('incy'),'Добавить подписку','incy://import/'+sub);
+  btn($('happ'),'Добавить подписку','happ://add/'+sub);
+  btn($('v2'),'Добавить подписку','v2raytun://import/'+sub);
+  MODES.forEach(function(m){
+    btn($('alt-incy'),m[1],'incy://autorouting/onadd/'+base+'/routing/incy-'+m[0]+'.json','s');
+    var a=btn($('alt-happ'),m[1],null,'s');
+    fetch(base+'/routing/happ-'+m[0]+'.json').then(function(r){return r.text()}).then(function(t){
+      var b=new TextEncoder().encode(t),s='';
+      for(var i=0;i<b.length;i++) s+=String.fromCharCode(b[i]);
+      a.href='happ://routing/onadd/'+btoa(s);
+    }).catch(function(){a.textContent=m[1]+' (не загрузилась)'});
+  });
+  $('copy').onclick=function(){
+    (navigator.clipboard?navigator.clipboard.writeText(sub):Promise.reject()).then(
+      function(){$('copy').textContent='Скопировано'},
+      function(){prompt('Скопируйте ссылку подписки:',sub)});
+  };
+}
+</script></body></html>

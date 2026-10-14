@@ -1,0 +1,10 @@
+[Unit]
+Description=Run XrayPanel post-disable reminders daily at 09:00 MSK
+
+[Timer]
+OnCalendar=*-*-* 06:00:00
+Persistent=true
+Unit=xraypanel-post-disable.service
+
+[Install]
+WantedBy=timers.target

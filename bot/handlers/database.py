@@ -104,8 +104,10 @@ async def db_import_apply(msg: Message, state: FSMContext):
         await msg.answer(f"⚠️ {arcname} в архиве повреждён или неожиданного формата, пропущен.")
 
     if not result.restored:
+        inside = ", ".join(result.members) if result.members else "пусто"
         await msg.answer(
-            f"В архиве не нашлось ни одного нужного файла ({', '.join(BACKUP_FILES.keys())}).",
+            f"В архиве не нашлось ни одного нужного файла ({', '.join(BACKUP_FILES.keys())}).\n\n"
+            f"В вашем архиве лежит: {inside}",
             reply_markup=main_menu
         )
         return

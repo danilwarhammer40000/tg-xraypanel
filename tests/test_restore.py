@@ -107,3 +107,47 @@ def test_destination_directory_is_created(tmp_path):
     files = {"xray.json": str(tmp_path / "fresh" / "data" / "xray.json")}
     result = restore.restore_backup_zip(make_zip({"xray.json": GOOD_STORE}), files)
     assert result.restored == ["xray.json"] and os.path.exists(files["xray.json"])
+
+
+# ---------------- archives that were re-zipped on another system ----------------
+
+@pytest.mark.parametrize("member", [
+    "backup/xray.json",                                  # unpacked and re-zipped inside a folder
+    "xraypanel_backup_20261014_123646/xray.json",
+    "./xray.json",
+    "XRAY.JSON",                                         # case is ignored
+    "a\\b\\xray.json",                                  # Windows separators
+])
+def test_the_file_is_found_by_name_wherever_it_sits_in_the_archive(tmp_path, member):
+    files = files_in(tmp_path)
+    result = restore.restore_backup_zip(make_zip({member: GOOD_STORE}), files)
+    assert result.restored == ["xray.json"] and result.invalid == []
+    assert json.loads((tmp_path / "xray.json").read_text()) == GOOD_STORE
+    assert os.listdir(tmp_path) == ["xray.json"]            # always the fixed destination, never the archive's path
+
+
+def test_macos_metadata_and_folder_entries_are_ignored(tmp_path):
+    files = files_in(tmp_path)
+    members = {"__MACOSX/backup/._xray.json": "garbage", "backup/": "", "backup/._xray.json": "garbage",
+               "backup/xray.json": GOOD_STORE}
+    result = restore.restore_backup_zip(make_zip(members), files)
+    assert result.restored == ["xray.json"] and result.invalid == []
+
+
+def test_the_shallowest_copy_wins(tmp_path):
+    other = {"clients": {"x": {"uuid": U1, "enabled": True}}}
+    result = restore.restore_backup_zip(make_zip({"deep/er/xray.json": other, "xray.json": GOOD_STORE}), files_in(tmp_path))
+    assert result.restored == ["xray.json"]
+    assert json.loads((tmp_path / "xray.json").read_text()) == GOOD_STORE
+
+
+def test_the_result_lists_what_the_archive_contains(tmp_path):
+    result = restore.restore_backup_zip(make_zip({"notes.txt": "hi", "photos/a.png": "x"}), files_in(tmp_path))
+    assert result.restored == [] and result.members == ["notes.txt", "photos/a.png"]
+
+
+def test_an_archive_cannot_write_outside_the_fixed_destinations(tmp_path):
+    files = {"xray.json": str(tmp_path / "data" / "xray.json")}
+    restore.restore_backup_zip(make_zip({"../../etc/xray.json": GOOD_STORE, "/abs/path/xray.json": GOOD_STORE}), files)
+    assert sorted(p.name for p in tmp_path.rglob("*") if p.is_file()) == ["xray.json"]
+    assert (tmp_path / "data" / "xray.json").exists()

@@ -53,7 +53,8 @@ bot/                    — Telegram-бот (админка + клиентски
   notify.py            — синхронная отправка через Bot API
   xray.py              — Xray: клиенты/ключ сервера в xray.json, синхронизация конфига
   subscription.py      — подписки: токены, ссылки по входам CDN, файлы + rsync на хост
-  xray_cli.py          — CLI: preflight / adopt / export-db / urls / publish / enable / disable
+  xray_cli.py          — CLI: preflight / adopt / export-db / users-template / import-users / urls / publish / enable / disable
+  users_import.py      — перенос «внешних» клиентов Xray в базу панели: ведомые и сроки
   manual_stand.py      — чтение ручной установки Xray и выгрузка базы (только stdlib, работает до установки панели)
   xray_adopt.py        — adopt: план + симуляция первой синхронизации
   restore.py           — восстановление базы из zip (используется кнопкой «Загрузить БД»)
@@ -201,7 +202,7 @@ evaluate_receipt_extraction`) по жёстким правилам (все — �
   параметры ссылки (`uplink_get`, `xmux`, `sess_key`) задаются в
   `xray.json["subscription"]`, пример и настройка хоста: `sub-host/`.
 
-CLI (на сервере с ботом): `venv/bin/python -m core.xray_cli preflight|adopt|export-db|urls|publish|enable|disable`.
+CLI (на сервере с ботом): `venv/bin/python -m core.xray_cli preflight|adopt|export-db|users-template|import-users|urls|publish|enable|disable`.
 Переход с ручной установки (люди, UUID и токены сохраняются, восстановление через бота): **`ADOPT.md`**.
 
 Важно: клиентские параметры подписки (`path`, ключ padding, шифрование) должны

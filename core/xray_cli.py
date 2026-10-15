@@ -6,6 +6,8 @@ Command line helper for the Xray backend (run on the server with the panel).
     venv/bin/python -m core.xray_cli adopt [--apply] [--force] # read the manual stand, show / write xray.json
     venv/bin/python -m core.xray_cli export-db --out /root     # restorable zip for the bot (same as tools/export_manual_stand.py)
     venv/bin/python -m core.xray_cli import-list /root/users.list   # only add people from users.list
+    venv/bin/python -m core.xray_cli users-template > /root/users-plan.csv   # table of "external" people to move into the database
+    venv/bin/python -m core.xray_cli import-users /root/users-plan.csv [--apply] [--allow-expired]
     venv/bin/python -m core.xray_cli urls                      # join-page URLs of everyone (secret!)
     venv/bin/python -m core.xray_cli disable NAME | enable NAME # switch a person off/on (then: publish)
     venv/bin/python -m core.xray_cli publish                   # sync Xray + publish subscriptions now
@@ -25,7 +27,7 @@ load_dotenv(os.getenv("XRAYPANEL_ENV", "/opt/xraypanel/.env"))  # must precede c
 
 from core import manual_stand as ms  # noqa: E402
 from core import subscription as sub  # noqa: E402
-from core import xray, xray_adopt  # noqa: E402
+from core import users_import, xray, xray_adopt  # noqa: E402
 from core.xray_adopt import parse_users_list  # noqa: E402,F401  (kept importable from here)
 
 
@@ -112,6 +114,40 @@ def cmd_switch(args) -> int:
     return 0
 
 
+def cmd_users_template(args) -> int:
+    from core import db
+    store = xray.load_store()
+    sys.stdout.write(users_import.build_template(store["clients"], {u.get("username") for u in db.list_users()}))
+    return 0
+
+
+def cmd_import_users(args) -> int:
+    from core import db
+    with open(args.path, encoding="utf-8") as f:
+        rows, errors = users_import.parse_plan(f.read())
+    store = xray.load_store(strict=True)
+    plan = users_import.plan_import(rows, store["clients"], {u.get("username") for u in db.list_users()},
+                                    allow_expired=args.allow_expired)
+    plan.problems[:0] = errors
+    print(users_import.format_plan(plan))
+    if not plan.ok:
+        print("\nИсправьте пункты ❌: ничего не записано.")
+        return 1
+    if not args.apply:
+        print("\nПробный запуск: ничего не записано. Для записи добавьте --apply")
+        return 0
+    result = users_import.apply_import(plan)
+    print(f"\nГотово: ведущих {len(result['leaders'])}, ведомых {len(result['followers'])}.")
+    if result["backup"]:
+        print(f"Копия прежней базы: {result['backup']}")
+    if result["passwords"]:
+        print("\nПароли ведущих (для привязки Telegram у клиента: имя и пароль; никому, кроме клиента, не показывайте):")
+        for name, password in result["passwords"].items():
+            print(f"  {name}: {password}")
+    print("\nДальше: python -m core.xray_cli publish   (доступ теперь следует срокам из базы)")
+    return 0
+
+
 def cmd_urls(args=None) -> int:
     store = xray.load_store()
     cfg = sub.sub_settings(store.get("subscription"), os.path.dirname(xray.XRAY_STORE_PATH))
@@ -154,6 +190,11 @@ def main(argv=None) -> int:
     export.add_argument("--out", default="/root")
     imp = commands.add_parser("import-list", help="добавить людей из users.list")
     imp.add_argument("path")
+    commands.add_parser("users-template", help="таблица внешних клиентов для переноса в базу панели")
+    iu = commands.add_parser("import-users", help="перенести внешних клиентов в базу панели (сроки, ведомые)")
+    iu.add_argument("path")
+    iu.add_argument("--apply", action="store_true", help="записать (без этого флага только показать план)")
+    iu.add_argument("--allow-expired", action="store_true", help="разрешить даты в прошлом (доступ будет отключён)")
     commands.add_parser("urls", help="показать ссылки подключения (секретные)")
     for name, text in (("enable", "включить человека"), ("disable", "выключить человека (его подписка перестанет открываться)")):
         commands.add_parser(name, help=text).add_argument("name")
@@ -162,7 +203,8 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
     return {"preflight": cmd_preflight, "adopt": cmd_adopt, "export-db": cmd_export_db,
             "import-list": cmd_import_list, "urls": cmd_urls, "publish": cmd_publish,
-            "enable": cmd_switch, "disable": cmd_switch}[args.cmd](args)
+            "enable": cmd_switch, "disable": cmd_switch,
+            "users-template": cmd_users_template, "import-users": cmd_import_users}[args.cmd](args)
 
 
 if __name__ == "__main__":
